@@ -126,6 +126,60 @@ pub fn fft_real(
 }
 
 
+
+/* sample
+
+* complex fft *
+let n = 8;
+let plan = FftPlan::new(n);
+
+let mut x = vec![Complex32::ZERO; n];
+for i in 0..n {
+    let theta = 2.0 * PI * i as f32 / n as f32;
+    x[i] = Complex32::from_polar(1.0, theta);
+}
+
+println!("complex input:");
+for v in &x {
+    println!("{:?}", v);
+}
+
+fft(&mut x, &plan);
+
+println!("\ncomplex FFT output:");
+for (k, v) in x.iter().enumerate() {
+    println!("k = {}: {:?}", k, v);
+}
+
+* real fft *
+let n = 8;
+    let real_plan = RealFftPlan::new(n);
+
+    let mut input = vec![0.0f32; n];
+    for i in 0..n {
+        input[i] = (2.0 * PI * i as f32 / n as f32).sin();
+    }
+
+    let mut output = vec![Complex32::ZERO; n / 2 + 1];
+    let mut buf = vec![Complex32::ZERO; n / 2];
+
+    println!("\nreal input:");
+    for v in &input {
+        println!("{:.6}", v);
+    }
+
+    fft_real(&input, &mut output, &mut buf, &real_plan);
+
+    println!("\nreal FFT (half spectrum):");
+    for (k, v) in output.iter().enumerate() {
+        println!("k = {}: {:?}", k, v);
+    }
+*/
+
+
+
+
+
 /*
 pub fn dft(input: &[Complex32], output: &mut [Complex32]) {
     let n = input.len();
