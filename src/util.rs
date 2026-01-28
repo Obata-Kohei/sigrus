@@ -1,3 +1,5 @@
+pub mod arithmetic;
+
 use num_complex::Complex32;
 
 pub fn approx_eq_f32_slice(a: &[f32], b: &[f32], eps: f32) -> bool {

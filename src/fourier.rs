@@ -1,6 +1,132 @@
 use num_complex::Complex32;
 use crate::prelude::*;
 
+fn bit_reverse_permute(x: &mut [Complex32]) {
+    let n = x.len();
+    let bits = n.trailing_zeros();
+
+    for i in 0..n {
+        let j = i.reverse_bits() >> (usize::BITS - bits);
+        if i < j {
+            x.swap(i, j);
+        }
+    }
+}
+
+pub struct FftPlan {
+    pub n: usize,
+    pub table: Vec<(usize, Vec<Complex32>)>,  // Vec< (段数, その段での回転因子) >
+}
+
+impl FftPlan {
+    pub fn new(n: usize) -> Self {
+        assert!(n.is_power_of_two());
+
+        let mut table = Vec::new();
+        let mut m = 2;
+
+        while m <= n {
+            let mut wm = Vec::with_capacity(m / 2);
+            for k in 0..m / 2 {
+                let theta = -2.0 * PI * k as f32 / m as f32;
+                wm.push(Complex32::from_polar(1.0, theta));
+            }
+            table.push((m, wm));
+            m <<= 1;
+        }
+
+        Self { n, table }
+    }
+}
+
+pub fn fft(x: &mut [Complex32], plan: &FftPlan) {
+    assert_eq!(x.len(), plan.n);
+
+    bit_reverse_permute(x);
+
+    for (m, wm) in &plan.table {
+        let half = m / 2;
+
+        for k in (0..plan.n).step_by(*m) {
+            for j in 0..half {
+                let t = wm[j] * x[k + j + half];
+                let u = x[k + j];
+                x[k + j] = u + t;
+                x[k + j + half] = u - t;
+            }
+        }
+    }
+}
+
+
+pub struct RealFftPlan {
+    pub n: usize,
+    pub half_plan: FftPlan,
+    pub wk_table: Vec<Complex32>,
+}
+
+impl RealFftPlan {
+    pub fn new(n: usize) -> Self {
+        assert!(n.is_power_of_two());
+        assert!(n >= 2);
+        assert!(n % 2 == 0);
+
+        let nh = n / 2;
+
+        let mut wk_table = Vec::with_capacity(nh);
+        for k in 0..nh {
+            let theta = -2.0 * PI * k as f32 / n as f32;
+            wk_table.push(Complex32::from_polar(1.0, theta));
+        }
+
+        Self {
+            n,
+            half_plan: FftPlan::new(n / 2),
+            wk_table,
+        }
+    }
+}
+
+pub fn fft_real(
+    input: &[f32],  // 長さ n
+    output: &mut [Complex32], // 長さ n/2 + 1
+    buf: &mut [Complex32],    // 長さ n/2
+    real_fft_plan: &RealFftPlan,      // n/2 点 FFT 用
+) {
+    let n = real_fft_plan.n;
+    let nh = real_fft_plan.half_plan.n;
+
+    assert_eq!(input.len(), n);
+    assert_eq!(output.len(), nh + 1);
+    assert_eq!(buf.len(), nh);
+
+    // 実信号を複素数にパック
+    for k in 0..nh {
+        buf[k] = Complex32::new(input[2 * k], input[2 * k + 1]);
+    }
+
+    // N/2 点 FFT
+    fft(buf, &real_fft_plan.half_plan);
+
+    // DC / Nyquist
+    let a0 = buf[0];
+    output[0] = Complex32::new(a0.re + a0.im, 0.0);
+    output[nh] = Complex32::new(a0.re - a0.im, 0.0);
+
+    // 正の周波数のみ生成
+    for k in 1..nh {
+        let a = buf[k];
+        let b = buf[nh - k].conj();
+
+        let t1 = a + b;
+        let t2 = (a - b) * Complex32::new(0.0, -1.0);
+
+        output[k] = (t1 + real_fft_plan.wk_table[k] * t2) * 0.5;
+    }
+}
+
+
+/*
 pub fn dft(input: &[Complex32], output: &mut [Complex32]) {
     let n = input.len();
     assert_eq!(n, output.len());
@@ -62,18 +188,6 @@ pub fn fft_cooley_tukey(input: &[Complex32], output: &mut [Complex32]) {
         let t = w * odd_fft[k];
         output[k] = even_fft[k] + t;
         output[k + n / 2] = even_fft[k] - t;
-    }
-}
-
-fn bit_reverse_permute(x: &mut [Complex32]) {
-    let n = x.len();
-    let bits = n.trailing_zeros();
-
-    for i in 0..n {
-        let j = i.reverse_bits() >> (usize::BITS - bits);
-        if i < j {
-            x.swap(i, j);
-        }
     }
 }
 
@@ -177,3 +291,5 @@ pub fn fft_inplace_steptwiddle(buf: &mut [Complex32]) {
         m <<= 1;
     }
 }
+
+*/
