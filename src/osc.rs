@@ -1,3 +1,5 @@
+pub mod osc;
+
 use rand::Rng;
 use crate::prelude::*;
 
@@ -5,7 +7,7 @@ pub trait Oscillator {
     fn oscillate();
 }
 
-pub fn sine(
+pub fn sin(
     out: &mut [f32],
     amp: f32,
     freq: f32,
@@ -48,7 +50,7 @@ pub fn saw(
     p
 }
 
-pub fn triangle(
+pub fn tri(
     out: &mut [f32],
     amp: f32,
     freq: f32,
@@ -70,7 +72,7 @@ pub fn triangle(
     p
 }
 
-pub fn square(
+pub fn sqr(
     out: &mut [f32],
     amp: f32,
     freq: f32,
@@ -100,7 +102,7 @@ pub fn white_noise(output: &mut [f32]) {
     }
 }
 
-pub fn pink_noise(output: &mut [f32], rows: usize) {
+pub fn pink_noise(output: &mut [f32], rows: usize) {  // e.g. rows = 64
     let n = output.len();
     let mut rng = rand::rng();
 

@@ -1,6 +1,7 @@
 pub use crate::{
     util::*,
     constants::*,
-    osc::*,
+    osc,
+    filter,
     fourier::*,
 };
