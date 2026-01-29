@@ -87,6 +87,8 @@ impl RealFftPlan {
     }
 }
 
+// 実信号用FFT
+// 正規化しない，負の周波数部分は省略
 pub fn fft_real(
     input: &[f32],  // 長さ n
     output: &mut [Complex32], // 長さ n/2 + 1
@@ -125,7 +127,26 @@ pub fn fft_real(
     }
 }
 
+pub fn amp_spec_real(
+    x: &[Complex32],  // n/2 + 1
+    real_fft_plan: &RealFftPlan,
+    output: &mut [f32]  // n/2 + 1
+) {
+    let len = x.len();
+    let n = real_fft_plan.n;
+    let nh = n / 2;
+    assert_eq!(n, (len - 1) * 2);
+    assert_eq!(len, output.len());
 
+    for k in 0..len {
+        let mut a = x[k].norm() / n as f32;
+        if k != 0 && k != nh {
+            a *= 2.0;
+        }
+
+        output[k] = a;
+    }
+}
 
 /* sample
 

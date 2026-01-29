@@ -1,11 +1,7 @@
-pub mod osc;
+pub mod oscillator;
 
 use rand::Rng;
 use crate::prelude::*;
-
-pub trait Oscillator {
-    fn oscillate();
-}
 
 pub fn sin(
     out: &mut [f32],
